@@ -1,0 +1,4 @@
+/node_modules
+/dist
+.czrc
+.vscode

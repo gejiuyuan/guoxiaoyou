@@ -1,0 +1,19 @@
+{
+  "name": "@guoxiaoyou/common",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "module": "dist/common.esm.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "files": [
+    "dist",
+    "readme.md"
+  ],
+  "sideEffects": false
+}

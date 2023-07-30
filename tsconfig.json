@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ESNext"],
+    "paths": {
+      // useful for bundling because esbuild can then tree-shake via the paths
+      "@guoxiaoyou/matrix": ["./packages/matrix"],
+      "@guoxiaoyou/common": ["./packages/common"]
+    }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["**/dist", "**/build", "**/node_modules"],
+  "ts-node": {
+    "esm": true
+  }
+}
