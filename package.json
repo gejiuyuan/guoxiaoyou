@@ -1,0 +1,44 @@
+{
+  "name": "guoxiaoyou",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@8.15.4",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "prepare": "npm run githooks",
+    "githooks": "npx simple-git-hooks",
+    "dev": "vite --host --force",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host",
+    "lint": "eslint . --ext ts,tsx",
+    "lint:diff": "git diff HEAD --name-only --diff-filter=d | grep '\\.ts$' | xargs eslint",
+    "prettier:write": "npx prettier --ignore-unknown --write .",
+    "prettier:auto": "git diff HEAD --name-only --diff-filter=d | xargs prettier --write",
+    "check:prettier:diff": "git diff HEAD --name-only --diff-filter=d | xargs prettier --check",
+    "check:tsc": "tsc --noEmit",
+    "check:tsc:diff": "node scripts/tsc-diff.js",
+    "check:tsc:watch": "tsc --watch --noEmit"
+  },
+  "devDependencies": {
+    "@rollup/plugin-image": "^3.0.3",
+    "@types/node": "^20.11.28",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "eslint": "^8.57.0",
+    "pnpm": "^8.15.4",
+    "postcss": "^8.4.35",
+    "postcss-nested": "^6.0.1",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "simple-git-hooks": "^2.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.6",
+    "vite-plugin-pwa": "^0.19.4"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npm run check:prettier:diff && npm run lint:diff && npm run check:tsc:diff",
+    "preserveUnused": true
+  }
+}

@@ -1,0 +1,43 @@
+[scrollbar='auto'] {
+  overflow-y: auto;
+}
+
+[scrollbar='overlay'] {
+  overflow-y: auto;
+  overflow-y: overlay;
+}
+
+[scrollbar] {
+  scrollbar-width: auto;
+  scrollbar-color: var(--scrollbarWidth) transparent;
+  scroll-behavior: smooth;
+  -ms-scroll-snap-type: y mandatory;
+  -webkit-scroll-snap-type: y mandatory;
+  scroll-snap-type: y mandatory;
+  scroll-snap-align: end;
+
+  &::-webkit-scrollbar {
+    width: var(--scrollbarWidth);
+    height: var(--scrollbarWidth);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbarColor);
+    border-radius: calc(var(--scrollbarWidth) / 4);
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: var(--noopColor);
+  }
+}
+
+[scrollbarWhenHover] {
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--noopColor);
+  }
+  &:hover {
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbarColor);
+    }
+  }
+}

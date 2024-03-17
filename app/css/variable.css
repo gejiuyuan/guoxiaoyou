@@ -1,0 +1,7 @@
+:root {
+  --scrollbarWidth: 8px;
+  --scrollbarColor: rgba(0, 0, 0, 0.18);
+  --noopColor: transparent;
+  --baseColor: rgb(254, 254, 254);
+  --baseBackgroud: rgb(246, 246, 246);
+}

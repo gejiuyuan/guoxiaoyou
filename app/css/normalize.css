@@ -1,0 +1,64 @@
+body,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-weight: normal;
+}
+
+br {
+  font-size: 0;
+}
+
+button,
+textarea,
+input {
+  appearance: none;
+  border: none;
+  outline: none;
+}
+
+a {
+  text-decoration: none;
+  color: currentColor;
+}
+
+em,
+i {
+  font-style: normal;
+}
+
+mark {
+  background-color: inherit;
+  color: currentColor;
+}
+
+ul,
+ol {
+  list-style-type: none;
+}
+
+:focus-visible {
+  outline: none;
+}
+
+[contenteditable='true'] {
+  caret-color: var(--theme);
+}
+
+img {
+  object-fit: contain;
+}

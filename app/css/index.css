@@ -1,0 +1,33 @@
+@import './variable.css';
+@import './normalize.css';
+@import './universal.css';
+
+html {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color-scheme: light dark;
+  background-color: var(--baseBackgroud);
+  color: var(--baseColor);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+}
+
+body {
+  margin: 0 auto;
+  display: flex;
+  place-items: center;
+  width: 100vw;
+  height: 100vh;
+  min-width: 980px;
+  max-width: 2000px;
+  contain: size style paint;
+  overflow: hidden;
+}
