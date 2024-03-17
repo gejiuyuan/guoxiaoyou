@@ -25,5 +25,5 @@
       "@base/*": ["./base/*"]
     }
   },
-  "include": ["app", "base"]
+  "include": ["./app/**/*.ts", "./base/**/*.ts"]
 }
