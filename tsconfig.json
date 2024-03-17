@@ -18,12 +18,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "./types"],
     "baseUrl": ".",
     "paths": {
       "@app/*": ["./app/*"],
       "@base/*": ["./base/*"]
     }
   },
-  "include": ["./app/**/*.ts", "./base/**/*.ts"]
+  "include": ["./app/**/*.ts", "./base/**/*.ts", "./types/**/*.d.ts"]
 }
