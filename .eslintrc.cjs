@@ -21,5 +21,6 @@ module.exports = {
     'no-empty': ['off'],
     'no-console': ['error'],
     'no-debugger': ['error'],
+    'prefer-rest-params': ['off'],
   },
 };

@@ -35,7 +35,7 @@ if (!gitChangedFiles.length) {
   const child = exec(`tsc -p ${temporaryFileName} --noEmit`, (err, stdout, stderr) => {
     fs.unlinkSync(temporaryConfigPath);
     if (err) {
-      console.log('\ntsc检查失败啦~~，原因如下：\n', stderr);
+      console.log('\ntsc检查失败啦~~，原因如下：\n', stdout, '\n', stderr);
       child.kill();
       process.exit(-1);
     } else {
