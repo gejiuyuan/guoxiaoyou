@@ -40,5 +40,8 @@
   "simple-git-hooks": {
     "pre-commit": "npm run check:prettier:diff && npm run lint:diff && npm run check:tsc:diff",
     "preserveUnused": true
+  },
+  "dependencies": {
+    "pixi.js": "^8.0.2"
   }
 }

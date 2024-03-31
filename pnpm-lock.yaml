@@ -6,6 +6,7 @@ specifiers:
   '@typescript-eslint/eslint-plugin': ^7.2.0
   '@typescript-eslint/parser': ^7.2.0
   eslint: ^8.57.0
+  pixi.js: ^8.0.2
   pnpm: ^8.15.4
   postcss: ^8.4.35
   postcss-nested: ^6.0.1
@@ -16,6 +17,9 @@ specifiers:
   typescript: ^5.2.2
   vite: ^5.1.6
   vite-plugin-pwa: ^0.19.4
+
+dependencies:
+  pixi.js: 8.0.2
 
 devDependencies:
   '@rollup/plugin-image': 3.0.3
@@ -2047,6 +2051,13 @@ packages:
       fastq: 1.17.1
     dev: true
 
+  /@pixi/colord/2.9.6:
+    resolution:
+      {
+        integrity: sha512-nezytU2pw587fQstUu1AsJZDVEynjskwOL+kibwcdxsMBFqPsFFNA7xl0ii/gXuDi6M0xj3mfRJj8pBSc2jCfA==,
+      }
+    dev: false
+
   /@pkgjs/parseargs/0.11.0:
     resolution:
       {
@@ -2339,6 +2350,20 @@ packages:
       }
     dev: true
 
+  /@types/css-font-loading-module/0.0.12:
+    resolution:
+      {
+        integrity: sha512-x2tZZYkSxXqWvTDgveSynfjq/T2HyiZHXb00j/+gy19yp70PHCizM48XFdjBCWH7eHBD0R5i/pw9yMBP/BH5uA==,
+      }
+    dev: false
+
+  /@types/earcut/2.1.4:
+    resolution:
+      {
+        integrity: sha512-qp3m9PPz4gULB9MhjGID7wpo3gJ4bTGXm7ltNDsmOvsPduTeHp8wSW9YckBj3mljeOh4F0m2z/0JKAALRKbmLQ==,
+      }
+    dev: false
+
   /@types/estree/0.0.39:
     resolution:
       {
@@ -2554,6 +2579,21 @@ packages:
         integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==,
       }
     dev: true
+
+  /@webgpu/types/0.1.40:
+    resolution:
+      {
+        integrity: sha512-/BBkHLS6/eQjyWhY2H7Dx5DHcVrS2ICj9owvSRdgtQT6KcafLZA86tPze0xAOsd4FbsYKCUBUQyNi87q7gV7kw==,
+      }
+    dev: false
+
+  /@xmldom/xmldom/0.8.10:
+    resolution:
+      {
+        integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==,
+      }
+    engines: { node: '>=10.0.0' }
+    dev: false
 
   /acorn-jsx/5.3.2_acorn@8.11.3:
     resolution:
@@ -3077,6 +3117,13 @@ packages:
       esutils: 2.0.3
     dev: true
 
+  /earcut/2.2.4:
+    resolution:
+      {
+        integrity: sha512-/pjZsA1b4RPHbeWZQn66SWS8nZZWLQQ23oE3Eam7aroEFGEvwKAsJfZ9ytiEMycfzXWpca4FA9QIOehf7PocBQ==,
+      }
+    dev: false
+
   /eastasianwidth/0.2.0:
     resolution:
       {
@@ -3396,6 +3443,13 @@ packages:
       }
     engines: { node: '>=0.10.0' }
     dev: true
+
+  /eventemitter3/5.0.1:
+    resolution:
+      {
+        integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==,
+      }
+    dev: false
 
   /fast-deep-equal/3.1.3:
     resolution:
@@ -4088,6 +4142,13 @@ packages:
       }
     dev: true
 
+  /ismobilejs/1.1.1:
+    resolution:
+      {
+        integrity: sha512-VaFW53yt8QO61k2WJui0dHf4SlL8lxBofUuUmwBo0ljPk0Drz2TiuDW4jo3wDcv41qy/SxrJ+VAzJ/qYqsmzRw==,
+      }
+    dev: false
+
   /jackspeak/2.3.6:
     resolution:
       {
@@ -4515,6 +4576,13 @@ packages:
       callsites: 3.1.0
     dev: true
 
+  /parse-svg-path/0.1.2:
+    resolution:
+      {
+        integrity: sha512-JyPSBnkTJ0AI8GGJLfMXvKq42cj5c006fnLz6fXy6zfoVjJizi8BNTpu8on8ziI1cKy9d9DGNuY17Ce7wuejpQ==,
+      }
+    dev: false
+
   /path-exists/4.0.0:
     resolution:
       {
@@ -4579,6 +4647,23 @@ packages:
       }
     engines: { node: '>=8.6' }
     dev: true
+
+  /pixi.js/8.0.2:
+    resolution:
+      {
+        integrity: sha512-E4oHF+cIkHB1BUHka8jKRih3ywDAKt/uRaTNIm4+7rEWMX5LhZZVryp8bcx516ZyQ8VrpBOs5ohrEViqYhCDAw==,
+      }
+    dependencies:
+      '@pixi/colord': 2.9.6
+      '@types/css-font-loading-module': 0.0.12
+      '@types/earcut': 2.1.4
+      '@webgpu/types': 0.1.40
+      '@xmldom/xmldom': 0.8.10
+      earcut: 2.2.4
+      eventemitter3: 5.0.1
+      ismobilejs: 1.1.1
+      parse-svg-path: 0.1.2
+    dev: false
 
   /pnpm/8.15.4:
     resolution:
