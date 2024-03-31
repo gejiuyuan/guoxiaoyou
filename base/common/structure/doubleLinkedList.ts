@@ -31,6 +31,10 @@ export class DoublyLinkedList<T> {
     return this.map.size;
   }
 
+  has(value: T) {
+    return this.map.has(value);
+  }
+
   insertBefore(node: DoublyLinkedListNode<T> | null, value: T) {
     // 如果要插入的节点本身就存在此列表中，则需要先删除，再插入
     if (this.map.has(value)) {
