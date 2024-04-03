@@ -1,9 +1,5 @@
 import { Dispatcher } from '@base/common/event/dispatcher';
-import {
-  Disposable,
-  DisposableStore,
-  IDisposable,
-} from '@base/common/lifecycle/lifecycle';
+import { Releasable, IReleasable } from '@base/common/lifecycle/releasable';
 import {
   BaseObservable,
   IObservable,
@@ -15,26 +11,26 @@ export interface MetaEvent<EventData, EventUtil = undefined> {
   (
     cb: (ev: EventData, evUtil?: EventUtil) => any,
     thisTarget?: any,
-    disposables?: DisposableStore | IDisposable[],
-  ): IDisposable;
+    releasables?: Releasable | IReleasable[],
+  ): IReleasable;
 }
 
 export namespace MetaEvent {
   export const None: MetaEvent<any> = () => {
-    return Disposable.None;
+    return Releasable.None;
   };
 
   export function once<T>(event: MetaEvent<T>): MetaEvent<T> {
-    return (listener, thisArgs = null, disposables?) => {
+    return (listener, thisArgs = null, releasables?) => {
       // 需要didFire标记，防止在listener执行期间又触发了这个事件
       let didFire = false;
-      let result: IDisposable | undefined = undefined;
+      let result: IReleasable | undefined = undefined;
       result = event(
         (e) => {
           if (didFire) {
             return;
           } else if (result) {
-            result.dispose();
+            result.release();
           } else {
             didFire = true;
           }
@@ -42,11 +38,11 @@ export namespace MetaEvent {
           return listener.call(thisArgs, e);
         },
         null,
-        disposables,
+        releasables,
       );
 
       if (didFire) {
-        result.dispose();
+        result.release();
       }
 
       return result;
@@ -59,7 +55,7 @@ export class EventObservable<T> extends BaseObservable<T> {
 
   private _hasValue = false;
 
-  private subscription: IDisposable | null = null;
+  private subscription: IReleasable | null = null;
 
   constructor(
     private readonly event: MetaEvent<T>,
@@ -102,7 +98,7 @@ export class EventObservable<T> extends BaseObservable<T> {
   }
 
   protected onLastObserverDelete(): void {
-    this.subscription?.dispose();
+    this.subscription?.release();
     this.subscription = null;
     this._value = void 0;
     this._hasValue = false;

@@ -3,12 +3,7 @@ import { NOOP, RETURN_FALSE } from '@base/common/constants';
 import { MetaEvent } from '@base/common/event/event';
 import { isUndef } from '@base/common/functional';
 import { isPromise } from '@base/common/is';
-import {
-  Disposable,
-  DisposableStore,
-  IDisposable,
-  toDisposable,
-} from '@base/common/lifecycle/lifecycle';
+import { Releasable, IReleasable, toReleasable } from '@base/common/lifecycle/releasable';
 import { DoublyLinkedList } from '@base/common/structure/doubleLinkedList';
 
 export interface DispatcherParams<T, D = undefined> {
@@ -19,7 +14,7 @@ export interface DispatcherParams<T, D = undefined> {
   onError?: (dispatcher: InstanceType<typeof BaseDispatcher<T, D>>, error: Error) => any;
 }
 
-export abstract class BaseDispatcher<T, D = undefined> implements IDisposable {
+export abstract class BaseDispatcher<T, D = undefined> implements IReleasable {
   constructor(protected readonly _params?: DispatcherParams<T, D>) {}
 
   protected _listeners: Array<Parameters<MetaEvent<T, D>>[0] | undefined> = [];
@@ -30,7 +25,7 @@ export abstract class BaseDispatcher<T, D = undefined> implements IDisposable {
     return this._size;
   }
 
-  dispose() {
+  release() {
     if (this._listeners.length) {
       this._listeners.length = 0;
       this._size = 0;
@@ -59,7 +54,7 @@ export abstract class BaseDispatcher<T, D = undefined> implements IDisposable {
   protected _event?: MetaEvent<T, D>;
   get event() {
     if (!this._event) {
-      this._event = (...[cb, thisTarget, disposables]: Parameters<MetaEvent<T, D>>) => {
+      this._event = (...[cb, thisTarget, releasables]: Parameters<MetaEvent<T, D>>) => {
         if (thisTarget) {
           cb = cb.bind(thisTarget);
         }
@@ -69,14 +64,14 @@ export abstract class BaseDispatcher<T, D = undefined> implements IDisposable {
         this._size++;
         this._params?.onAdd?.(this);
 
-        const _event = toDisposable(() => {
+        const _event = toReleasable(() => {
           this.remove(cb);
         });
 
-        if (disposables instanceof DisposableStore) {
-          disposables.add(_event);
-        } else if (Array.isArray(disposables)) {
-          disposables.push(_event);
+        if (releasables instanceof Releasable) {
+          releasables.collect(_event);
+        } else if (Array.isArray(releasables)) {
+          releasables.push(_event);
         }
 
         return _event;
@@ -85,26 +80,22 @@ export abstract class BaseDispatcher<T, D = undefined> implements IDisposable {
     return this._event!;
   }
 
-  protected _onceEvent?: (...args: Parameters<typeof this.event>) => void;
   get onceEvent() {
-    if (!this._onceEvent) {
-      this._onceEvent = (...[cb, ...rest]: Parameters<typeof this.event>) => {
-        const disposable = this.event(
-          function (...args) {
-            let res: any;
-            if (res[0]) {
-              res = cb.call(rest[0], ...args);
-            } else {
-              res = cb(...args);
-            }
-            disposable.dispose();
-            return res;
-          },
-          ...rest,
-        );
-      };
-    }
-    return this._onceEvent!;
+    return (...[cb, ...rest]: Parameters<typeof this.event>) => {
+      const releasable = this.event(
+        function (...args) {
+          let res: any;
+          if (res[0]) {
+            res = cb.call(rest[0], ...args);
+          } else {
+            res = cb(...args);
+          }
+          releasable.release();
+          return res;
+        },
+        ...rest,
+      );
+    };
   }
 
   protected dispatchLoop(
@@ -362,7 +353,7 @@ export class EventBuffer {
   private readonly _buffers = new Array<Function[]>();
 
   wrap<T extends Array<any>>(event: MetaEvent<T>): MetaEvent<T> {
-    return (listener, thisArgs?, disposables?) => {
+    return (listener, thisArgs?, releasables?) => {
       return event(
         (eventData) => {
           const buffer = this._buffers.at(-1);
@@ -375,7 +366,7 @@ export class EventBuffer {
           }
         },
         void 0,
-        disposables,
+        releasables,
       );
     };
   }
@@ -408,13 +399,12 @@ export class EventBuffer {
  *  来自该输入事件的事件。输入（input）可随时更改
  * @export
  * @class Relay
- * @implements {IDisposable}
  * @template T
  */
-export class Relay<T> implements IDisposable {
+export class Relay<T> implements IReleasable {
   private _inputEvent: MetaEvent<T> = MetaEvent.None;
 
-  private _inputEventListener: IDisposable = Disposable.None;
+  private _inputEventListener: IReleasable = Releasable.None;
 
   private readonly dispatcher = new Dispatcher<T>({
     onBeforeAdd: (dispatcher) => {
@@ -424,7 +414,7 @@ export class Relay<T> implements IDisposable {
     },
     onRemove: (dispatcher) => {
       if (dispatcher.size === 0) {
-        this._inputEventListener.dispose();
+        this._inputEventListener.release();
       }
     },
   });
@@ -435,7 +425,7 @@ export class Relay<T> implements IDisposable {
     this._inputEvent = event;
 
     if (this.dispatcher.size) {
-      this._inputEventListener.dispose();
+      this._inputEventListener.release();
       this._inputEventListener = this._inputEvent(
         this.dispatcher.dispatch,
         this.dispatcher,
@@ -443,16 +433,16 @@ export class Relay<T> implements IDisposable {
     }
   }
 
-  dispose() {
-    this._inputEventListener.dispose();
-    this.dispatcher.dispose();
+  release() {
+    this._inputEventListener.release();
+    this.dispatcher.release();
   }
 }
 
-export class EventMultiplexer<T> implements IDisposable {
+export class EventMultiplexer<T> implements IReleasable {
   private _events = new Array<{
     event: MetaEvent<T>;
-    listener: IDisposable | null;
+    listener: IReleasable | null;
   }>();
 
   get event() {
@@ -486,7 +476,7 @@ export class EventMultiplexer<T> implements IDisposable {
       this._hook(e);
     }
 
-    return toDisposable(() => {
+    return toReleasable(() => {
       if (this.hasListener) {
         this._unhook(e);
         this._events.splice(this._events.indexOf(e), 1);
@@ -502,12 +492,12 @@ export class EventMultiplexer<T> implements IDisposable {
 
   private _unhook(e: (typeof this._events)[number]) {
     if (e.listener) {
-      e.listener.dispose();
+      e.listener.release();
       e.listener = null;
     }
   }
 
-  dispose() {
-    this.dispatcher.dispose();
+  release() {
+    this.dispatcher.release();
   }
 }

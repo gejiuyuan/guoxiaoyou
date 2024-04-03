@@ -1,14 +1,14 @@
 import { Dispatcher } from '@base/common/event/dispatcher';
-import { Disposable } from '@base/common/lifecycle/lifecycle';
+import { Releasable } from '@base/common/lifecycle/releasable';
 
-export class ResizeObserverDisposable extends Disposable {
+export class ResizeObserverReleasable extends Releasable {
   #targets = new Set<Element>();
 
   #observer = new ResizeObserver((entries: ResizeObserverEntry[]) => {
     this.#onChange.dispatch(entries);
   });
 
-  #onChange = this.addDisposale(new Dispatcher<ResizeObserverEntry[]>());
+  #onChange = this.collect(new Dispatcher<ResizeObserverEntry[]>());
   public get onChange() {
     return this.#onChange.event;
   }
@@ -41,13 +41,9 @@ export class ResizeObserverDisposable extends Disposable {
     }
   }
 
-  clear(): void {
-    super.clear();
+  release(): void {
+    super.release();
     this.unobserve();
-  }
-
-  dispose(): void {
-    super.dispose();
     this.disconnect();
   }
 }

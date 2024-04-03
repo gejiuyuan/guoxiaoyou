@@ -1,18 +1,18 @@
 import { EventType, TargetListener } from '@base/common/browser/eventTarget';
-import { Disposable } from '@base/common/lifecycle/lifecycle';
+import { Releasable } from '@base/common/lifecycle/releasable';
 
-export class StandardTarget<T extends EventTarget> extends Disposable {
+export class StandardTarget<T extends EventTarget> extends Releasable {
   constructor(public target: T) {
     super();
   }
 
-  dispose(): void {
-    super.dispose();
+  release(): void {
+    super.release();
     this.target = null!;
   }
 
   click(cb: (ev: GlobalEventHandlersEventMap['click']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.CLICK, (ev) => {
         cb(ev);
       }),
@@ -20,7 +20,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   dblclick(cb: (ev: GlobalEventHandlersEventMap['dblclick']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.DBL_CLICK, (ev) => {
         cb(ev);
       }),
@@ -28,7 +28,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   mousedown(cb: (ev: GlobalEventHandlersEventMap['mousedown']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.MOUSE_DOWN, (ev) => {
         cb(ev);
       }),
@@ -36,7 +36,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   mousemove(cb: (ev: GlobalEventHandlersEventMap['mousemove']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.MOUSE_MOVE, (ev) => {
         cb(ev);
       }),
@@ -44,7 +44,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   mouseup(cb: (ev: GlobalEventHandlersEventMap['mouseup']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.MOUSE_UP, (ev) => {
         cb(ev);
       }),
@@ -52,7 +52,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   mouseover(cb: (ev: GlobalEventHandlersEventMap['mouseover']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.MOUSE_OVER, (ev) => {
         cb(ev);
       }),
@@ -60,7 +60,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   mouseout(cb: (ev: GlobalEventHandlersEventMap['mouseout']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.MOUSE_OUT, (ev) => {
         cb(ev);
       }),
@@ -68,7 +68,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   pointerdown(cb: (ev: GlobalEventHandlersEventMap['pointerdown']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.POINTER_DOWN, (ev) => {
         cb(ev);
       }),
@@ -76,7 +76,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   pointermove(cb: (ev: GlobalEventHandlersEventMap['pointermove']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.POINTER_MOVE, (ev) => {
         cb(ev);
       }),
@@ -84,7 +84,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   pointerup(cb: (ev: GlobalEventHandlersEventMap['pointerup']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.POINTER_UP, (ev) => {
         cb(ev);
       }),
@@ -92,7 +92,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   wheel(cb: (ev: GlobalEventHandlersEventMap['wheel']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.MOUSE_WHEEL, (ev) => {
         cb(ev);
       }),
@@ -100,7 +100,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   contextmenu(cb: (ev: GlobalEventHandlersEventMap['contextmenu']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.CONTEXT_MENU, (ev) => {
         cb(ev);
       }),
@@ -108,7 +108,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   keydown(cb: (ev: GlobalEventHandlersEventMap['keydown']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.KEY_DOWN, (ev) => {
         cb(ev);
       }),
@@ -116,7 +116,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   keyup(cb: (ev: GlobalEventHandlersEventMap['keyup']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.KEY_UP, (ev) => {
         cb(ev);
       }),
@@ -124,7 +124,7 @@ export class StandardTarget<T extends EventTarget> extends Disposable {
   }
 
   resize(cb: (ev: GlobalEventHandlersEventMap['resize']) => void) {
-    this.addDisposale(
+    this.collect(
       TargetListener.create(this.target, EventType.RESIZE, (ev) => {
         cb(ev);
       }),

@@ -1,10 +1,10 @@
 import { Dispatcher } from '@base/common/event/dispatcher';
-import { Disposable, toDisposable } from '@base/common/lifecycle/lifecycle';
+import { Releasable, toReleasable } from '@base/common/lifecycle/releasable';
 
-export class BroadcastChannelDispatcher<T> extends Disposable {
+export class BroadcastChannelDispatcher<T> extends Releasable {
   protected channel!: BroadcastChannel;
 
-  private readonly _onMessage = this.addDisposale(new Dispatcher<T>());
+  private readonly _onMessage = this.collect(new Dispatcher<T>());
 
   readonly onMessage = this._onMessage.event;
 
@@ -18,8 +18,8 @@ export class BroadcastChannelDispatcher<T> extends Disposable {
     this.channel = new BroadcastChannel(this.label);
     this.channel.addEventListener('message', listener);
 
-    this.addDisposale(
-      toDisposable(() => {
+    this.collect(
+      toReleasable(() => {
         this.channel.removeEventListener('message', listener);
         this.channel.close();
       }),

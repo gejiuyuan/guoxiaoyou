@@ -24,7 +24,7 @@ if (!gitChangedFiles.length) {
     .replace(/\,[\s\n]*}/g, '}');
 
   const newConfig = JSON.parse(tsConfigContent);
-  delete newConfig.include;
+  newConfig.include = [path.join(process.cwd(), 'types')];
   newConfig.compilerOptions.types.push('node');
   newConfig.files = gitChangedFiles;
 

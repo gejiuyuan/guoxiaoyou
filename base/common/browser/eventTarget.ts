@@ -1,6 +1,6 @@
-import { IDisposable } from '@base/common/lifecycle/lifecycle';
+import { IReleasable } from '@base/common/lifecycle/releasable';
 
-export class TargetListener implements IDisposable {
+export class TargetListener implements IReleasable {
   static create(...args: ConstructorParameters<typeof TargetListener>) {
     return new TargetListener(...args);
   }
@@ -14,7 +14,7 @@ export class TargetListener implements IDisposable {
     this._target.addEventListener(this._type, this._callback, this._options);
   }
 
-  dispose() {
+  release() {
     if (!this._target) {
       return;
     }

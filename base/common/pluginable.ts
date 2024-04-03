@@ -1,4 +1,4 @@
-import { Disposable, DisposableStore } from '@base/common/lifecycle/lifecycle';
+import { Releasable } from '@base/common/lifecycle/releasable';
 
 export interface IPlugin<S extends object> {
   readonly name?: string | symbol;
@@ -8,7 +8,7 @@ export interface IPlugin<S extends object> {
 
 export interface IPluginContext<S extends object> {
   readonly sdk: S;
-  readonly subscriptions: DisposableStore;
+  readonly subscriptions: Releasable;
 }
 
 interface IPluginFactory<S extends object> extends IPlugin<S> {
@@ -36,7 +36,7 @@ class Plugin<S extends object> implements IPluginFactory<S> {
         get sdk() {
           return _this.sdk;
         },
-        subscriptions: new DisposableStore(),
+        subscriptions: new Releasable(),
       };
     }
     return this.#context;
@@ -54,13 +54,13 @@ class Plugin<S extends object> implements IPluginFactory<S> {
 
   clear() {
     if (this.#context) {
-      this.#context.subscriptions.dispose();
+      this.#context.subscriptions.release();
       this.#context = null!;
     }
   }
 }
 
-export abstract class Pluginable extends Disposable {
+export abstract class Pluginable extends Releasable {
   get plugins() {
     return [...this.#enabledPluginMap.keys(), ...this.#disabledPluginMap.keys()];
   }
@@ -144,8 +144,8 @@ export abstract class Pluginable extends Disposable {
     return this;
   }
 
-  clear(): void {
-    super.clear();
+  release(): void {
+    super.release();
     this.uninstallPlugin(this.plugins);
   }
 }

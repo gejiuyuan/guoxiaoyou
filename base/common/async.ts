@@ -1,6 +1,6 @@
-import { IDisposable } from '@base/common/lifecycle/lifecycle';
+import { IReleasable } from '@base/common/lifecycle/releasable';
 
-export class TimeoutTimer implements IDisposable {
+export class TimeoutTimer implements IReleasable {
   private _mark: any = -1;
 
   constructor();
@@ -33,7 +33,7 @@ export class TimeoutTimer implements IDisposable {
     }
   }
 
-  dispose() {
+  release() {
     this.cancel();
   }
 
@@ -43,10 +43,10 @@ export class TimeoutTimer implements IDisposable {
   }
 }
 
-export class IntervalTimer implements IDisposable {
+export class IntervalTimer implements IReleasable {
   private _mark: any = -1;
 
-  dispose() {
+  release() {
     this.cancel();
   }
 

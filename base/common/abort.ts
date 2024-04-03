@@ -1,7 +1,7 @@
 import { TimeoutTimer } from '@base/common/async';
 import { NOOP } from '@base/common/constants';
 import { Dispatcher } from '@base/common/event/dispatcher';
-import { IDisposable } from '@base/common/lifecycle/lifecycle';
+import { IReleasable } from '@base/common/lifecycle/releasable';
 
 export interface IAbortToken {
   didAbort: boolean;
@@ -9,8 +9,8 @@ export interface IAbortToken {
   readonly onAborted: (
     listener: (e: any) => any,
     thisTarget?: any,
-    disposables?: IDisposable[],
-  ) => IDisposable;
+    releasable?: IReleasable[],
+  ) => IReleasable;
 }
 
 export namespace AbortToken {
@@ -26,8 +26,8 @@ export namespace AbortToken {
         listener.call(thisTarget, void 0);
       }, 0);
       return {
-        dispose() {
-          timer.dispose();
+        release() {
+          timer.release();
           timer = null!;
         },
       };
@@ -39,7 +39,7 @@ export namespace AbortToken {
   };
 }
 
-class MutableAbortToken implements IAbortToken, IDisposable {
+class MutableAbortToken implements IAbortToken, IReleasable {
   didAbort: boolean = false;
   private _onAborted: Dispatcher<any> | null = null;
 
@@ -59,8 +59,8 @@ class MutableAbortToken implements IAbortToken, IDisposable {
     this.didAbort = true;
   }
 
-  dispose() {
-    this._onAborted?.dispose();
+  release() {
+    this._onAborted?.release();
     this._onAborted = null!;
   }
 }
