@@ -42,6 +42,7 @@
     "preserveUnused": true
   },
   "dependencies": {
+    "canvaskit-wasm": "^0.39.1",
     "pixi.js": "^8.0.2"
   }
 }

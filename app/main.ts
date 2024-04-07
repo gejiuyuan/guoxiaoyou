@@ -1,22 +1,23 @@
 import '@app/css/index.css';
-import { Application, Graphics } from 'pixi.js';
 import { createReactivity } from '@base/common/reactivity/reactivity';
+import { CanvasKitApp } from '@base/canvas-kit/canvas-kit';
 
-export {};
+// const app = new Application({});
 
-const app = new Application({});
+// await app.init({
+//   background: 'cornflowerblue',
+//   resizeTo: window,
+// });
 
-await app.init({
-  background: 'cornflowerblue',
-  resizeTo: window,
-});
+// let obj = new Graphics().rect(500, 200, 400, 300).fill(0xff0000);
 
-let obj = new Graphics().rect(500, 200, 400, 300).fill(0xff0000);
+// // Add it to the stage to render
+// app.stage.addChild(obj);
 
-// Add it to the stage to render
-app.stage.addChild(obj);
+// document.getElementById('canvas')!.append(app.canvas);
 
-document.getElementById('canvas')!.append(app.canvas);
+const canvasKitApp = new CanvasKitApp();
+canvasKitApp.init();
 
 const { reactive, watch } = createReactivity();
 

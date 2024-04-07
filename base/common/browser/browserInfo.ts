@@ -2,6 +2,9 @@ export function uaIndexof(str: string) {
   return navigator.userAgent.indexOf(str);
 }
 
+export const isBrowser =
+  typeof window !== 'undefined' && typeof window.document !== 'undefined';
+
 export const isMacOs = uaIndexof('Mac OS') > 0;
 
 export const isChromeFrame = uaIndexof('chromeframe') > 0 || uaIndexof('x-clock') > 0;
