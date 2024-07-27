@@ -1,16 +1,16 @@
-import { Dispatcher } from '@base/common/event/dispatcher';
+import { Emitter } from '@base/common/event/emitter';
 import { Releasable } from '@base/common/lifecycle/releasable';
 
 export class ResizeObserverReleasable extends Releasable {
   #targets = new Set<Element>();
 
   #observer = new ResizeObserver((entries: ResizeObserverEntry[]) => {
-    this.#onChange.dispatch(entries);
+    this.#onChange.emit(entries);
   });
 
-  #onChange = this.collect(new Dispatcher<ResizeObserverEntry[]>());
+  #onChange = this.collect(new Emitter<ResizeObserverEntry[]>());
   public get onChange() {
-    return this.#onChange.event;
+    return this.#onChange.on;
   }
 
   observe(target: Element, options?: ResizeObserverOptions) {

@@ -6,16 +6,16 @@ import { isPromise } from '@base/common/is';
 import { Releasable, IReleasable, toReleasable } from '@base/common/lifecycle/releasable';
 import { DoublyLinkedList } from '@base/common/structure/doubleLinkedList';
 
-export interface DispatcherParams<T, D = undefined> {
-  onBeforeAdd?: (dispatcher: InstanceType<typeof BaseDispatcher<T, D>>) => any;
-  onAdd?: (dispatcher: InstanceType<typeof BaseDispatcher<T, D>>) => any;
-  onBeforeRemove?: (dispatcher: InstanceType<typeof BaseDispatcher<T, D>>) => any;
-  onRemove?: (dispatcher: InstanceType<typeof BaseDispatcher<T, D>>) => any;
-  onError?: (dispatcher: InstanceType<typeof BaseDispatcher<T, D>>, error: Error) => any;
+export interface EmitterParams<T, D = undefined> {
+  onBeforeAdd?: (emitter: InstanceType<typeof Emitter<T, D>>) => any;
+  onAdd?: (emitter: InstanceType<typeof Emitter<T, D>>) => any;
+  onBeforeRemove?: (emitter: InstanceType<typeof Emitter<T, D>>) => any;
+  onRemove?: (emitter: InstanceType<typeof Emitter<T, D>>) => any;
+  onError?: (emitter: InstanceType<typeof Emitter<T, D>>, error: Error) => any;
 }
 
-export abstract class BaseDispatcher<T, D = undefined> implements IReleasable {
-  constructor(protected readonly _params?: DispatcherParams<T, D>) {}
+export class Emitter<T, D = undefined> implements IReleasable {
+  constructor(protected readonly _params?: EmitterParams<T, D>) {}
 
   protected _listeners: Array<Parameters<MetaEvent<T, D>>[0] | undefined> = [];
 
@@ -33,7 +33,7 @@ export abstract class BaseDispatcher<T, D = undefined> implements IReleasable {
     }
   }
 
-  private remove(listener: (typeof this._listeners)[number]) {
+  off(listener: (typeof this._listeners)[number]) {
     if (!this._size) {
       return;
     }
@@ -49,80 +49,33 @@ export abstract class BaseDispatcher<T, D = undefined> implements IReleasable {
     throw new Error(`no this listener`);
   }
 
-  abstract dispatch(eventData: T): void;
-
-  protected _event?: MetaEvent<T, D>;
-  get event() {
-    if (!this._event) {
-      this._event = (...[cb, thisTarget, releasables]: Parameters<MetaEvent<T, D>>) => {
-        if (thisTarget) {
-          cb = cb.bind(thisTarget);
-        }
-
+  declare protected _on?: MetaEvent<T, D>;
+  get on() {
+    if (!this._on) {
+      this._on = (...[cb]: Parameters<MetaEvent<T, D>>) => {
         this._params?.onBeforeAdd?.(this);
         this._listeners.push(cb);
         this._size++;
         this._params?.onAdd?.(this);
-
-        const _event = toReleasable(() => {
-          this.remove(cb);
+        return toReleasable(() => {
+          this.off(cb);
         });
-
-        if (releasables instanceof Releasable) {
-          releasables.collect(_event);
-        } else if (Array.isArray(releasables)) {
-          releasables.push(_event);
-        }
-
-        return _event;
       };
     }
-    return this._event!;
+    return this._on;
   }
 
-  get onceEvent() {
-    return (...[cb, ...rest]: Parameters<typeof this.event>) => {
-      const releasable = this.event(
-        function (...args) {
-          let res: any;
-          if (res[0]) {
-            res = cb.call(rest[0], ...args);
-          } else {
-            res = cb(...args);
-          }
-          releasable.release();
-          return res;
-        },
-        ...rest,
-      );
+  get once() {
+    return (...[cb]: Parameters<typeof this.on>) => {
+      const releasable = this.on(function (...args) {
+        const res = cb(...args);
+        releasable.release();
+        return res;
+      });
     };
   }
 
-  protected dispatchLoop(
-    index: number,
-    length: number,
-    cb: (listener: (typeof this._listeners)[number]) => any,
-    interruptFn: () => boolean = RETURN_FALSE,
-  ): Promise<any> | any {
-    while (index < length) {
-      const res = cb(this._listeners[index++] || NOOP);
-      if (isPromise(res)) {
-        return res.then((value) => {
-          if (interruptFn()) {
-            return value;
-          }
-          this.dispatchLoop(index, length, cb, interruptFn);
-        });
-      }
-      if (interruptFn()) {
-        return res;
-      }
-    }
-  }
-}
-
-export class Dispatcher<T> extends BaseDispatcher<T> {
-  dispatch(eventData: T) {
+  emit(eventData: T) {
     if (!this.size) {
       return;
     }
@@ -141,64 +94,29 @@ export class Dispatcher<T> extends BaseDispatcher<T> {
 
     let i = 0;
     const { length } = this._listeners;
-    return this.dispatchLoop(i, length, fn);
+    return this.emitLoop(i, length, fn);
   }
-}
 
-export interface IInterruptEventData {
-  interrupt(): any;
-}
-
-/**
- * 可中断的dispatcher
- * @export
- * @class InterruptableDispatcher
- * @extends {BaseDispatcher<T, IInterruptEventData['interrupt']>}
- * @template T
- */
-export class InterruptableDispatcher<T> extends BaseDispatcher<
-  T,
-  IInterruptEventData['interrupt']
-> {
-  dispatch(eventData: T): void {
-    if (!this.size) {
-      return;
-    }
-    let isInterrupted = false;
-    const interrupt = () => {
-      isInterrupted = true;
-    };
-    const onError = this._params?.onError;
-    const fn = !onError
-      ? (cb: (typeof this._listeners)[number]) => {
-          return cb!(eventData, interrupt);
-        }
-      : (cb: (typeof this._listeners)[number]) => {
-          const onReturn = (res: unknown) => {
-            if (res === false && !isInterrupted) {
-              interrupt();
-            }
-            return res;
-          };
-          const onCatch = (err: Error) => {
-            interrupt();
-            onError!(this, err);
-            return false;
-          };
-          try {
-            const res = cb!(eventData, interrupt);
-            if (isPromise(res)) {
-              return res.then(onReturn).catch(onCatch);
-            }
-            return onReturn(res);
-          } catch (err) {
-            return onCatch(new Error(err as unknown as string));
+  protected emitLoop(
+    index: number,
+    length: number,
+    cb: (listener: (typeof this._listeners)[number]) => any,
+    interruptFn: () => boolean = RETURN_FALSE,
+  ): Promise<any> | any {
+    while (index < length) {
+      const res = cb(this._listeners[index++] || NOOP);
+      if (isPromise(res)) {
+        return res.then((value) => {
+          if (interruptFn()) {
+            return value;
           }
-        };
-
-    let i = 0;
-    const { length } = this._listeners;
-    return this.dispatchLoop(i, length, fn, () => isInterrupted);
+          this.emitLoop(index, length, cb, interruptFn);
+        });
+      }
+      if (interruptFn()) {
+        return res;
+      }
+    }
   }
 }
 
@@ -207,10 +125,10 @@ export interface IWaitUntil {
   waitUntil(promise: Promise<unknown>): void;
 }
 
-export class AsyncDispatcher<T> extends BaseDispatcher<T, IWaitUntil> {
+export class AsyncEmitter<T> extends Emitter<T, IWaitUntil> {
   private _taskQueue?: DoublyLinkedList<[(typeof this._listeners)[number], T]>;
 
-  async dispatch(eventData: T, abortToken: IAbortToken = AbortToken.None) {
+  async emit(eventData: T, abortToken: IAbortToken = AbortToken.None) {
     if (!this.size) {
       return;
     }
@@ -245,7 +163,7 @@ export class AsyncDispatcher<T> extends BaseDispatcher<T, IWaitUntil> {
   }
 }
 
-export class PauseableDispatcher<T> extends Dispatcher<T> {
+export class PauseableEmitter<T> extends Emitter<T> {
   private _pausedCount = 0;
 
   protected _eventQueue = new DoublyLinkedList<T>();
@@ -256,7 +174,7 @@ export class PauseableDispatcher<T> extends Dispatcher<T> {
     return this._pausedCount !== 0;
   }
 
-  constructor(params?: DispatcherParams<T> & { merge?: (infos: T[]) => T }) {
+  constructor(params?: EmitterParams<T> & { merge?: (infos: T[]) => T }) {
     super(params);
     this._merge = params?.merge;
   }
@@ -271,38 +189,38 @@ export class PauseableDispatcher<T> extends Dispatcher<T> {
         if (this._eventQueue.size) {
           const events = [...this._eventQueue];
           this._eventQueue.clear();
-          super.dispatch(this._merge(events));
+          super.emit(this._merge(events));
         }
       } else {
         while (!this._pausedCount && this._eventQueue.size) {
-          super.dispatch(this._eventQueue.shift()!);
+          super.emit(this._eventQueue.shift()!);
         }
       }
     }
   }
 
-  dispatch(eventData: T): void {
+  emit(eventData: T): void {
     if (this.size) {
       if (this.isPaused) {
         this._eventQueue.push(eventData);
       } else {
-        super.dispatch(eventData);
+        super.emit(eventData);
       }
     }
   }
 }
 
-export class DebounceDispatcher<T> extends PauseableDispatcher<T> {
+export class DebounceEmitter<T> extends PauseableEmitter<T> {
   private readonly _time: number;
 
   private _handler: any | undefined;
 
-  constructor(params: DispatcherParams<T> & { merge: (infos: T[]) => T; time?: number }) {
+  constructor(params: EmitterParams<T> & { merge: (infos: T[]) => T; time?: number }) {
     super(params);
     this._time = isUndef(params.time) ? 100 : params.time;
   }
 
-  dispatch(eventData: T): void {
+  emit(eventData: T): void {
     if (!this._handler) {
       this.pause();
       this._handler = setTimeout(() => {
@@ -310,21 +228,21 @@ export class DebounceDispatcher<T> extends PauseableDispatcher<T> {
         this.resume();
       }, this._time);
     }
-    super.dispatch(eventData);
+    super.emit(eventData);
   }
 }
 
-export class MicrotaskDispatcher<T> extends Dispatcher<T> {
+export class MicrotaskEmitter<T> extends Emitter<T> {
   private readonly _queuedEvents = new Array<T>();
 
   private _merge?: (infos: T[]) => T;
 
-  constructor(params?: DispatcherParams<T> & { merge?: (infos: T[]) => T }) {
+  constructor(params?: EmitterParams<T> & { merge?: (infos: T[]) => T }) {
     super(params);
     this._merge = params?.merge;
   }
 
-  dispatch(eventData: T): void {
+  emit(eventData: T): void {
     if (!this.size) {
       return;
     }
@@ -332,9 +250,9 @@ export class MicrotaskDispatcher<T> extends Dispatcher<T> {
     if (this._queuedEvents.length === 1) {
       queueMicrotask(() => {
         if (this._merge) {
-          super.dispatch(this._merge(this._queuedEvents));
+          super.emit(this._merge(this._queuedEvents));
         } else {
-          this._queuedEvents.forEach((event) => super.dispatch(event));
+          this._queuedEvents.forEach((event) => super.emit(event));
         }
         this._queuedEvents.length = 0;
       });
@@ -353,21 +271,17 @@ export class EventBuffer {
   private readonly _buffers = new Array<Function[]>();
 
   wrap<T extends Array<any>>(event: MetaEvent<T>): MetaEvent<T> {
-    return (listener, thisArgs?, releasables?) => {
-      return event(
-        (eventData) => {
-          const buffer = this._buffers.at(-1);
-          if (buffer) {
-            buffer.push(() => {
-              listener.call(thisArgs, eventData, void 0);
-            });
-          } else {
-            listener.call(thisArgs, eventData, void 0);
-          }
-        },
-        void 0,
-        releasables,
-      );
+    return (listener) => {
+      return event((eventData) => {
+        const buffer = this._buffers.at(-1);
+        if (buffer) {
+          buffer.push(() => {
+            listener(eventData, void 0);
+          });
+        } else {
+          listener(eventData, void 0);
+        }
+      });
     };
   }
 
@@ -380,17 +294,6 @@ export class EventBuffer {
     return value;
   }
 }
-
-// eg:
-// const dispatcher = new Dispatcher();
-// const bufferer = new EventBuffer();
-// const bufferEvent = bufferer.wrap(v.event);
-// bufferEvent((ev) => {
-// 	console.log(ev);
-// });
-// bufferer.buffer(() => {
-// 	dispatcher.dispatch(9);
-// });
 
 /**
  * 中继转发器
@@ -406,36 +309,37 @@ export class Relay<T> implements IReleasable {
 
   private _inputEventListener: IReleasable = Releasable.None;
 
-  private readonly dispatcher = new Dispatcher<T>({
-    onBeforeAdd: (dispatcher) => {
-      if (dispatcher.size === 0) {
-        this._inputEventListener = this._inputEvent(dispatcher.dispatch, dispatcher);
+  private readonly emitter = new Emitter<T>({
+    onBeforeAdd: (emitter) => {
+      if (emitter.size === 0) {
+        this._inputEventListener = this._inputEvent((ev) => {
+          return emitter.emit(ev);
+        });
       }
     },
-    onRemove: (dispatcher) => {
-      if (dispatcher.size === 0) {
+    onRemove: (emitter) => {
+      if (emitter.size === 0) {
         this._inputEventListener.release();
       }
     },
   });
 
-  public readonly event: MetaEvent<T> = this.dispatcher.event;
+  public readonly event: MetaEvent<T> = this.emitter.on;
 
   set input(event: MetaEvent<T>) {
     this._inputEvent = event;
 
-    if (this.dispatcher.size) {
+    if (this.emitter.size) {
       this._inputEventListener.release();
-      this._inputEventListener = this._inputEvent(
-        this.dispatcher.dispatch,
-        this.dispatcher,
-      );
+      this._inputEventListener = this._inputEvent((ev) => {
+        return this.emitter.emit(ev);
+      });
     }
   }
 
   release() {
     this._inputEventListener.release();
-    this.dispatcher.release();
+    this.emitter.release();
   }
 }
 
@@ -445,22 +349,22 @@ export class EventMultiplexer<T> implements IReleasable {
     listener: IReleasable | null;
   }>();
 
-  get event() {
-    return this.dispatcher.event;
+  get on() {
+    return this.emitter.on;
   }
 
   get hasListener() {
-    return !this.dispatcher.size;
+    return !this.emitter.size;
   }
 
-  private readonly dispatcher = new Dispatcher<T>({
-    onBeforeAdd: (dispatcher) => {
-      if (dispatcher.size === 0) {
+  private readonly emitter = new Emitter<T>({
+    onBeforeAdd: (emitter) => {
+      if (emitter.size === 0) {
         this._events.forEach((ev) => this._hook(ev));
       }
     },
-    onRemove: (dispatcher) => {
-      if (dispatcher.size === 0) {
+    onRemove: (emitter) => {
+      if (emitter.size === 0) {
         this._events.forEach((ev) => this._unhook(ev));
       }
     },
@@ -486,7 +390,7 @@ export class EventMultiplexer<T> implements IReleasable {
 
   private _hook(e: (typeof this._events)[number]) {
     e.listener = e.event((eventData) => {
-      this.dispatcher.dispatch(eventData);
+      this.emitter.emit(eventData);
     });
   }
 
@@ -498,6 +402,6 @@ export class EventMultiplexer<T> implements IReleasable {
   }
 
   release() {
-    this.dispatcher.release();
+    this.emitter.release();
   }
 }

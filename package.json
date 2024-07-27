@@ -3,9 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "packageManager": "pnpm@8.15.4",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
     "prepare": "npm run githooks",
     "githooks": "npx simple-git-hooks",
     "dev": "vite --host --force",
@@ -43,6 +41,7 @@
   },
   "dependencies": {
     "canvaskit-wasm": "^0.39.1",
+    "guoxiaoyou": "file:",
     "pixi.js": "^8.0.2"
   }
 }

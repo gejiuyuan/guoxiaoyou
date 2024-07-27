@@ -1,4 +1,4 @@
-import { Dispatcher } from '@base/common/event/dispatcher';
+import { Emitter } from '@base/common/event/emitter';
 import { Releasable, IReleasable } from '@base/common/lifecycle/releasable';
 import {
   BaseObservable,
@@ -8,11 +8,7 @@ import {
 import { IObserver } from '@base/common/observable/observer';
 
 export interface MetaEvent<EventData, EventUtil = undefined> {
-  (
-    cb: (ev: EventData, evUtil?: EventUtil) => any,
-    thisTarget?: any,
-    releasables?: Releasable | IReleasable[],
-  ): IReleasable;
+  (cb: (ev: EventData, evUtil?: EventUtil) => any): IReleasable;
 }
 
 export namespace MetaEvent {
@@ -21,30 +17,23 @@ export namespace MetaEvent {
   };
 
   export function once<T>(event: MetaEvent<T>): MetaEvent<T> {
-    return (listener, thisArgs = null, releasables?) => {
+    return (listener) => {
       // 需要didFire标记，防止在listener执行期间又触发了这个事件
       let didFire = false;
       let result: IReleasable | undefined = undefined;
-      result = event(
-        (e) => {
-          if (didFire) {
-            return;
-          } else if (result) {
-            result.release();
-          } else {
-            didFire = true;
-          }
-
-          return listener.call(thisArgs, e);
-        },
-        null,
-        releasables,
-      );
-
+      result = event((e) => {
+        if (didFire) {
+          return;
+        } else if (result) {
+          result.release();
+        } else {
+          didFire = true;
+        }
+        return listener(e);
+      });
       if (didFire) {
         result.release();
       }
-
       return result;
     };
   }
@@ -110,7 +99,7 @@ export class EventObserver<T> implements IObserver {
 
   private _didChange = false;
 
-  readonly dispatcher = new Dispatcher<T>({
+  readonly dispatcher = new Emitter<T>({
     onBeforeAdd: (dispatcher) => {
       if (dispatcher.size === 0) {
         this._observable.add(this);
@@ -124,7 +113,7 @@ export class EventObserver<T> implements IObserver {
   });
 
   get event() {
-    return this.dispatcher.event;
+    return this.dispatcher.on;
   }
 
   constructor(private readonly _observable: IObservable<T>) {}
@@ -138,7 +127,7 @@ export class EventObserver<T> implements IObserver {
       this._observable.reportChanges();
       if (this._didChange) {
         this._didChange = false;
-        this.dispatcher.dispatch(this._observable.get());
+        this.dispatcher.emit(this._observable.get());
       }
     }
   }

@@ -1,6 +1,6 @@
 import { TimeoutTimer } from '@base/common/async';
 import { NOOP } from '@base/common/constants';
-import { Dispatcher } from '@base/common/event/dispatcher';
+import { Emitter } from '@base/common/event/emitter';
 import { IReleasable } from '@base/common/lifecycle/releasable';
 
 export interface IAbortToken {
@@ -41,7 +41,7 @@ export namespace AbortToken {
 
 class MutableAbortToken implements IAbortToken, IReleasable {
   didAbort: boolean = false;
-  private _onAborted: Dispatcher<any> | null = null;
+  private _onAborted: Emitter<any> | null = null;
 
   get onAborted() {
     if (this.didAbort) {
@@ -49,10 +49,10 @@ class MutableAbortToken implements IAbortToken, IReleasable {
     }
 
     if (!this._onAborted) {
-      this._onAborted = new Dispatcher();
+      this._onAborted = new Emitter();
     }
 
-    return this._onAborted.event;
+    return this._onAborted.on;
   }
 
   abort() {

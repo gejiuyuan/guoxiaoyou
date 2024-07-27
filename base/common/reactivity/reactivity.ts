@@ -1,65 +1,6 @@
-import { EMPTY_OBJECT, NOOP } from '@base/common/constants';
+import { EMPTY_OBJECT } from '@base/common/constants';
+import { createGetSetDecorator } from '@base/common/decorator';
 import { DoublyLinkedList } from '@base/common/structure/doubleLinkedList';
-
-export function isGetSetPropertyDescriptor(
-  descriptor: TypedPropertyDescriptor<any>,
-): descriptor is {
-  get: NonNullable<TypedPropertyDescriptor<any>['get']>;
-  set: NonNullable<TypedPropertyDescriptor<any>['set']>;
-} & Pick<TypedPropertyDescriptor<any>, 'configurable' | 'enumerable' | 'writable'> {
-  return typeof descriptor.get === 'function' && typeof descriptor.set === 'function';
-}
-
-export function isPropertyKey(prop: unknown): prop is PropertyKey {
-  const typeofValue = typeof prop;
-  return typeofValue === 'string' || typeofValue === 'number' || typeofValue === 'symbol';
-}
-
-interface IGetSetWatchDecoratorOptions<T extends object> {
-  getter: (this: T, prop: PropertyKey, value: unknown) => void;
-  setter: (this: T, prop: PropertyKey, newValue: unknown, oldValue: unknown) => void;
-  accessor?: (target: T, prop: PropertyKey) => void;
-}
-
-export function createGetSetWatchDecorator<T extends object>({
-  getter,
-  setter,
-  accessor = NOOP,
-}: IGetSetWatchDecoratorOptions<T>) {
-  return (target: T, property: PropertyKey, descriptor: PropertyDescriptor) => {
-    if (descriptor === void 0) {
-      if (property === void 0) {
-        // Class类装饰器
-        return;
-      } else if (isPropertyKey(property)) {
-        // 属性装饰器
-      }
-    } else {
-      if (Object.prototype.toString.call(descriptor).slice(8, -1) === 'Object') {
-        // get set访问器装饰器
-        if (isGetSetPropertyDescriptor(descriptor)) {
-          const { get: originalGet, set: originalSet } = descriptor;
-          const prop = descriptor.get.name.split(' ')[1];
-          accessor(target, prop);
-          descriptor.get = function (this: T) {
-            const value = originalGet.call(this);
-            getter.call(this, prop, value);
-            return value;
-          };
-          descriptor.set = function (this: T, newValue: any) {
-            const oldValue = originalGet.call(this);
-            if (newValue !== oldValue) {
-              originalSet.call(this, newValue);
-              setter.call(this, prop, newValue, oldValue);
-            }
-          };
-        }
-      } else {
-        // 方法装饰器
-      }
-    }
-  };
-}
 
 /**
  * watch api执行选项
@@ -84,6 +25,8 @@ interface WatcherOptions {
 type TStopWatch = () => void;
 
 const INITIAL_WATCHER_VALUE = Object.freeze(Object());
+
+const DEFAULT_STOP_WATCH = function stopWatch() {};
 
 class Effect {
   clear() {
@@ -114,7 +57,7 @@ class Reactivity {
 
   #activeEffect: Effect | null = null;
 
-  readonly reactive: ReturnType<typeof createGetSetWatchDecorator>;
+  readonly reactive: ReturnType<typeof createGetSetDecorator>;
 
   private runEffect(effect: Effect) {
     if (!this.#effectStack.has(effect)) {
@@ -159,7 +102,7 @@ class Reactivity {
     if (typeof effect !== 'function') {
       // eslint-disable-next-line no-console
       console.error(`The second parameter of 'watch' ———— 'cb' must be a function!`);
-      return NOOP;
+      return DEFAULT_STOP_WATCH;
     }
 
     // 默认触发机制：响应式数据更新后，异步执行回调任务
@@ -226,12 +169,12 @@ class Reactivity {
       }
     }
 
-    return NOOP;
+    return DEFAULT_STOP_WATCH;
   }
 
   constructor() {
     const _this = this;
-    this.reactive = createGetSetWatchDecorator({
+    this.reactive = createGetSetDecorator({
       accessor: (target) => {
         if (!this.#trackedTargets.has(target)) {
           this.#trackedTargets.set(target, 0);

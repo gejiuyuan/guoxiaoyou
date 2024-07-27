@@ -1,15 +1,21 @@
-import { once } from '@base/common/functional';
 import { Iterable } from '@base/common/iterable';
 
 /**
- * 一个IReleasable可能被多个Releasable模块所注册，当其中一个Releasable在释放此IReleasable时，
- * 注册了它的其他Releasable也要释放它
+ * 记录收集了此IReleasable的Releasable们
+ * @description
+ *  一个IReleasable可能被多个Releasable模块所注册，当其中一个Releasable在释放此IReleasable时，
+ *  注册了它的其他Releasable也要释放它
  */
-const REF_RELEASABLE_SYMBOL = Symbol('ref-releasable');
+const REF_RELEASABLE = Symbol('ref-releasable');
+
+/**
+ * 记录Releasable收集的IReleasable
+ */
+const COLLECTED_RELEASABLE = Symbol('collected-releasable');
 
 export interface IReleasable {
   release(): any;
-  [REF_RELEASABLE_SYMBOL]?: Set<Releasable>;
+  [REF_RELEASABLE]?: Set<Releasable>;
 }
 
 export function isReleasable<T extends object>(thing: T): thing is T & IReleasable {
@@ -53,23 +59,40 @@ export function release<T extends IReleasable>(arg: T | Iterable<T>): any {
 
 export function toReleasable(fn: () => any): IReleasable {
   return {
-    release: once(fn),
+    release: fn,
   };
 }
 
 export class Releasable<R extends IReleasable = IReleasable> implements IReleasable {
   static readonly None = Object.freeze<IReleasable>({ release() {} });
 
-  readonly #store = new Set<R>();
+  readonly [COLLECTED_RELEASABLE] = new Set<R>();
 
-  release() {
-    if (this.#store.size) {
-      try {
-        for (const item of this.#store) {
-          item.release();
-        }
-      } finally {
-        this.#store.clear();
+  #releaseOne(releasable: R) {
+    try {
+      Reflect.get(this, COLLECTED_RELEASABLE).delete(releasable);
+      const refs = Reflect.get(releasable, REF_RELEASABLE)!;
+      for (const refReleasable of refs) {
+        Reflect.get(refReleasable, COLLECTED_RELEASABLE).delete(releasable);
+      }
+      refs.clear();
+      Reflect.deleteProperty(releasable, REF_RELEASABLE);
+      releasable.release();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('release error: ', err);
+    }
+  }
+
+  release(releasable?: R) {
+    if (releasable) {
+      if (Reflect.get(this, COLLECTED_RELEASABLE).has(releasable)) {
+        this.#releaseOne(releasable);
+      }
+    } else {
+      const iterator = Reflect.get(this, COLLECTED_RELEASABLE).values();
+      while ((releasable = iterator.next().value)) {
+        this.#releaseOne(releasable);
       }
     }
   }
@@ -79,40 +102,12 @@ export class Releasable<R extends IReleasable = IReleasable> implements IReleasa
       if (Object.is(this, releasable)) {
         throw new Error(`Can't add a releasable on itself!`);
       }
-      if (!this.#store.has(releasable)) {
-        this.#store.add(releasable);
-        this.#recordRefReleasable(releasable);
+      if (!Reflect.get(this, COLLECTED_RELEASABLE).has(releasable)) {
+        Reflect.get(this, COLLECTED_RELEASABLE).add(releasable);
+        (releasable[REF_RELEASABLE] ??= new Set()).add(this);
       }
     }
     return releasable;
-  }
-
-  releaseOne<T extends R>(releasable: T, callRelease: boolean = true): T {
-    if (this.#store.has(releasable)) {
-      this.#store.delete(releasable);
-      this.#releaseRefReleasable(releasable);
-      callRelease && releasable.release();
-    }
-    return releasable;
-  }
-
-  #recordRefReleasable(releasable: IReleasable) {
-    let refs = Reflect.get(releasable, REF_RELEASABLE_SYMBOL);
-    if (!refs) {
-      Reflect.set(releasable, REF_RELEASABLE_SYMBOL, (refs = new Set()));
-    }
-    refs.add(this);
-  }
-
-  #releaseRefReleasable(releasable: IReleasable) {
-    const refs = Reflect.get(releasable, REF_RELEASABLE_SYMBOL);
-    if (refs) {
-      for (const refReleasable of refs) {
-        refReleasable.releaseOne(releasable, false);
-      }
-      refs.clear();
-      Reflect.deleteProperty(releasable, REF_RELEASABLE_SYMBOL);
-    }
   }
 
   static do(fn: (store: Releasable) => void) {
